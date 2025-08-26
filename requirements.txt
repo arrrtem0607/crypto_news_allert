@@ -1,0 +1,10 @@
+aiohttp
+pydantic
+orjson
+python-telegram-bot
+asyncpg
+redis
+apscheduler
+rapidfuzz
+uvicorn
+prometheus-client
