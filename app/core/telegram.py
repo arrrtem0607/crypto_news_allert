@@ -1,19 +1,22 @@
+"""Telegram publishing utilities."""
 from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from html import escape
-from typing import Iterable, Union, Any
+from typing import Iterable
+
+from pydantic import SecretStr
 from zoneinfo import ZoneInfo
 
 from telegram import Bot
 from telegram.constants import ParseMode
 
-ChatId = Union[int, str]
 
 @dataclass
 class NewsItem:
+    """Minimal representation of a news item for publishing."""
     title: str
     summary: str
     url: str
@@ -21,15 +24,16 @@ class NewsItem:
     tickers: Iterable[str]
     published_at: datetime
 
-_MAX_SUMMARY_LEN = 500
 
 def format_message(item: NewsItem, tz: ZoneInfo) -> str:
+    """Render a :class:`NewsItem` into an HTML message."""
+
     local_time = item.published_at.astimezone(tz).strftime("%Y-%m-%d %H:%M")
     tickers = ", ".join(item.tickers) if item.tickers else "-"
-    title = escape(item.title or "")
-    summary = escape(item.summary or "")[:_MAX_SUMMARY_LEN]
-    url = escape(item.url or "")
-    source = escape(item.source or "")
+    title = escape(item.title)
+    summary = escape(item.summary)[:500]
+    url = escape(item.url)
+    source = escape(item.source)
     return (
         f"<b>⚡ {title}</b>\n"
         f"{summary}\n\n"
@@ -37,37 +41,25 @@ def format_message(item: NewsItem, tz: ZoneInfo) -> str:
         f'<a href="{url}">Open source</a>'
     )
 
-def _unwrap_secret(value: Any) -> str:
-    # Поддержка pydantic.SecretStr и аналогов
-    get_secret = getattr(value, "get_secret_value", None)
-    return get_secret() if callable(get_secret) else str(value)
-
-def _normalize_chat_id(chat_id: ChatId) -> ChatId:
-    if isinstance(chat_id, str):
-        s = chat_id.strip()
-        if s.startswith("@") or s.startswith("http"):
-            return s
-        if s.lstrip("-").isdigit():
-            try:
-                return int(s)
-            except ValueError:
-                return s
-        return s
-    return chat_id
-
 class TelegramPublisher:
-    """Lightweight wrapper around telegram.Bot with rate limiting."""
-    def __init__(self, bot_token: Union[str, Any], chat_id: ChatId, rate_limit: int = 10):
-        self.bot = Bot(_unwrap_secret(bot_token))  # <<< разворачиваем SecretStr
-        self.chat_id: ChatId = _normalize_chat_id(chat_id)
+    """Lightweight wrapper around :class:`telegram.Bot` with rate limiting."""
+
+    def __init__(
+        self, bot_token: str | SecretStr, chat_id: int | str, rate_limit: int = 10
+    ):
+        if isinstance(bot_token, SecretStr):
+            bot_token = bot_token.get_secret_value()
+        if isinstance(chat_id, str) and chat_id.startswith("-") and chat_id.lstrip("-").isdigit():
+            chat_id = int(chat_id)
+        self.bot = Bot(bot_token)
+        self.chat_id = chat_id
         self.parse_mode = ParseMode.HTML
+        # Allow up to ``rate_limit`` messages concurrently.
         self._semaphore = asyncio.Semaphore(rate_limit)
 
     async def send(self, item: NewsItem, tz: ZoneInfo) -> None:
+        """Send a news item to the configured Telegram chat."""
+
         text = format_message(item, tz)
         async with self._semaphore:
-            await self.bot.send_message(
-                chat_id=self.chat_id,
-                text=text,
-                parse_mode=self.parse_mode,
-            )
+            await self.bot.send_message(self.chat_id, text, parse_mode=self.parse_mode)

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import abc
 import asyncio
+import json
 import logging
 import random
 from dataclasses import dataclass
@@ -89,8 +90,26 @@ class BaseProvider(abc.ABC):
         req = self._build_request()
         try:
             async with self.session.get(**req, timeout=self.timeout) as resp:
-                resp.raise_for_status()
-                payload = await resp.json()
+                text = await resp.text()
+                if resp.status >= 400:
+                    logger.error(
+                        "%s HTTP %s %s params=%s body=%s",
+                        self.name,
+                        resp.status,
+                        req.get("url"),
+                        req.get("params"),
+                        text,
+                    )
+                    if (
+                        resp.status == 422
+                        and str(req.get("url", "")).endswith("/news")
+                        and (req.get("params") or {}).get("category") == "cryptocurrency"
+                    ):
+                        logger.error(
+                            "Newsdata returned 422 for /news with category=cryptocurrency. Use /api/1/crypto instead."
+                        )
+                    resp.raise_for_status()
+                payload = json.loads(text) if text else {}
             self._backoff.reset()
             return await self._parse_items(payload)
         except Exception:

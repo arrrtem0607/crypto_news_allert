@@ -4,6 +4,7 @@ import hashlib
 import re
 from datetime import datetime, timezone
 from typing import Iterable
+from urllib.parse import urlparse
 
 from dateutil import parser
 
@@ -33,7 +34,11 @@ def normalize_newsdata(raw: dict) -> NormalizedItem:
     summary = _strip_html(raw.get("description") or raw.get("content"))
     url = raw.get("link") or raw.get("url") or ""
     published_str = raw.get("pubDate") or raw.get("published_at")
-    published_at = parser.parse(published_str).astimezone(timezone.utc) if published_str else datetime.now(timezone.utc)
+    published_at = (
+        parser.parse(published_str).astimezone(timezone.utc)
+        if published_str
+        else datetime.now(timezone.utc)
+    )
     language = raw.get("language")
     authors = raw.get("creator") or []
     if isinstance(authors, str):
@@ -41,16 +46,21 @@ def normalize_newsdata(raw: dict) -> NormalizedItem:
     categories = raw.get("category") or []
     if isinstance(categories, str):
         categories = [categories]
-    tickers = raw.get("tickers") or []
+    tickers = raw.get("coin") or raw.get("tickers") or []
+    if isinstance(tickers, str):
+        tickers = [tickers]
     if not tickers:
         tickers = _extract_tickers(f"{title} {summary or ''}")
     external_id = raw.get("article_id") or raw.get("id")
     if not external_id:
         external_id = hashlib.sha1(url.encode()).hexdigest()
+    source = raw.get("source_id") or raw.get("source")
+    if not source:
+        source = urlparse(url).netloc
 
     return NormalizedItem(
         external_id=external_id,
-        source="newsdata",
+        source=source or "newsdata",
         title=title,
         summary=summary,
         url=url,

@@ -2,21 +2,20 @@ from __future__ import annotations
 
 import os
 import yaml
-from typing import Union, Literal
 from pydantic import BaseModel, SecretStr, field_validator
+
 
 class TelegramSettings(BaseModel):
     bot_token: SecretStr
-    channel_id: Union[int, str]  # было: str
-    parse_mode: Literal["HTML", "MarkdownV2"] = "HTML"
+    channel_id: int | str
+    parse_mode: str = "HTML"
     rate_limit_per_min: int = 10
 
     @field_validator("channel_id", mode="before")
     @classmethod
-    def coerce_chat_id(cls, v):
-        # " -100123..." -> int; "@my_channel" оставляем строкой
-        if isinstance(v, str) and v.strip().lstrip("-").isdigit():
-            return int(v.strip())
+    def _coerce_channel(cls, v: str | int) -> str | int:
+        if isinstance(v, str) and v.startswith("-") and v.lstrip("-").isdigit():
+            return int(v)
         return v
 
 
@@ -27,8 +26,15 @@ class ProviderSettings(BaseModel):
     query: str | None = None
 
 
+class NewsdataSettings(ProviderSettings):
+    endpoint: str = "crypto"
+    query: str | None = (
+        "language=en,ru&timeframe=90m&removeduplicate=1&size=50&q=ETF OR SEC OR hack OR listing"
+    )
+
+
 class ProvidersSettings(BaseModel):
-    newsdata: ProviderSettings
+    newsdata: NewsdataSettings
 
 
 class FiltersSettings(BaseModel):

@@ -1,15 +1,16 @@
 telegram:
   bot_token: ${TELEGRAM_BOT_TOKEN}
-  channel_id: ${TELEGRAM_CHANNEL_ID}
+  channel_id: "${TELEGRAM_CHANNEL_ID}"
   parse_mode: HTML
   rate_limit_per_min: 10
 
 providers:
   newsdata:
     enabled: true
+    endpoint: crypto
     api_key: ${NEWSDATA_API_KEY}
     poll_interval_s: 45
-    query: "category=cryptocurrency&language=en,ru"
+    query: "language=en,ru&timeframe=90m&removeduplicate=1&size=50&q=ETF OR SEC OR hack OR listing"
 
 filters:
   languages: ["en", "ru"]
