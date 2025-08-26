@@ -2,14 +2,22 @@ from __future__ import annotations
 
 import os
 import yaml
-from pydantic import BaseModel
-
+from typing import Union, Literal
+from pydantic import BaseModel, SecretStr, field_validator
 
 class TelegramSettings(BaseModel):
-    bot_token: str
-    channel_id: str
-    parse_mode: str = "HTML"
+    bot_token: SecretStr
+    channel_id: Union[int, str]  # было: str
+    parse_mode: Literal["HTML", "MarkdownV2"] = "HTML"
     rate_limit_per_min: int = 10
+
+    @field_validator("channel_id", mode="before")
+    @classmethod
+    def coerce_chat_id(cls, v):
+        # " -100123..." -> int; "@my_channel" оставляем строкой
+        if isinstance(v, str) and v.strip().lstrip("-").isdigit():
+            return int(v.strip())
+        return v
 
 
 class ProviderSettings(BaseModel):
