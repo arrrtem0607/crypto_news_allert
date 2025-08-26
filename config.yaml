@@ -1,0 +1,28 @@
+telegram:
+  bot_token: ${TELEGRAM_BOT_TOKEN}
+  channel_id: "${TELEGRAM_CHANNEL_ID}"
+  parse_mode: HTML
+  rate_limit_per_min: 10
+
+providers:
+  newsdata:
+    enabled: true
+    endpoint: crypto
+    api_key: ${NEWSDATA_API_KEY}
+    poll_interval_s: 45
+    query: "language=en,ru&timeframe=90m&removeduplicate=1&size=50&q=ETF OR SEC OR hack OR listing"
+
+filters:
+  languages: ["en", "ru"]
+  exclude_domains: ["linktr.ee/*", "medium.com/@*"]
+
+scoring:
+  w_source: 1.0
+  w_recency: 1.5
+  half_life_min: 120
+  w_ticker: 0.4
+  threshold: 1.8
+
+runtime:
+  tz: "Europe/Berlin"
+  redis_url: ${REDIS_URL}
