@@ -7,7 +7,7 @@ currently contains two reusable modules:
   polling and exponential backoff.
 * `app/core/telegram.py` – minimal Telegram publisher that formats news items
   and sends them to a channel.
-
+  
 The repository now includes a minimal end-to-end pipeline using the
 `Newsdata.io` provider.  Items are normalized, de-duplicated, scored and, if
 the score passes the configured threshold, published to a Telegram channel.
