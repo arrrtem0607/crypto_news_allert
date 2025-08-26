@@ -8,3 +8,8 @@ apscheduler
 rapidfuzz
 uvicorn
 prometheus-client
+pyyaml
+python-dotenv
+python-dateutil
+pytest
+fakeredis
