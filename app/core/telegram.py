@@ -1,5 +1,4 @@
 """Telegram publishing utilities."""
-
 from __future__ import annotations
 
 import asyncio
@@ -18,7 +17,6 @@ from telegram.constants import ParseMode
 @dataclass
 class NewsItem:
     """Minimal representation of a news item for publishing."""
-
     title: str
     summary: str
     url: str
@@ -42,7 +40,6 @@ def format_message(item: NewsItem, tz: ZoneInfo) -> str:
         f"<b>Tickers:</b> {tickers} | <b>Src:</b> {source} | <b>T:</b> {local_time}\n\n"
         f'<a href="{url}">Open source</a>'
     )
-
 
 class TelegramPublisher:
     """Lightweight wrapper around :class:`telegram.Bot` with rate limiting."""

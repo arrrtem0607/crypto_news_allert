@@ -1,7 +1,6 @@
 from datetime import timezone
 
 from datetime import timezone
-
 from app.core.normalize import normalize_newsdata
 
 
