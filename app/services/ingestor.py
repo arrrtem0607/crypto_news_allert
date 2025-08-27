@@ -8,11 +8,12 @@ from zoneinfo import ZoneInfo
 import aiohttp
 
 from app.core.config import load_config
-from app.core.normalize import normalize_newsdata
+from app.core.normalize import normalize_newsdata, normalize_cryptopanic
 from app.core import dedup
 from app.core.score import score_item
 from app.core.telegram import TelegramPublisher, NewsItem
 from app.providers.newsdata import NewsdataProvider
+from app.providers.cryptopanic import CryptoPanicProvider
 
 
 async def main() -> None:
@@ -24,7 +25,7 @@ async def main() -> None:
     queue: asyncio.Queue[dict] = asyncio.Queue(maxsize=100)
 
     async with aiohttp.ClientSession() as session:
-        provider = NewsdataProvider(session, cfg.providers.newsdata.model_dump())
+        provider = CryptoPanicProvider(session, cfg.providers.cryptopanic.model_dump())
         publisher = TelegramPublisher(
             cfg.telegram.bot_token,
             cfg.telegram.channel_id,
@@ -39,21 +40,22 @@ async def main() -> None:
             while True:
                 raw = await queue.get()
                 try:
-                    item = normalize_newsdata(raw)
+                    item = normalize_cryptopanic(raw)
                     fp = dedup.fingerprint(str(item.url), item.title, item.source)
                     if await dedup.is_duplicate(fp):
                         continue
                     score = score_item(item, datetime.now(timezone.utc), cfg)
-                    if score >= cfg.scoring.threshold:
-                        news = NewsItem(
-                            title=item.title,
-                            summary=item.summary or "",
-                            url=str(item.url),
-                            source=item.source,
-                            tickers=item.tickers,
-                            published_at=item.published_at,
-                        )
-                        await publisher.send(news, tz)
+                    #if score >= cfg.scoring.threshold:
+                    news = NewsItem(
+                        title=item.title,
+                        summary=item.summary or "",
+                        url=str(item.url),
+                        source=item.source,
+                        tickers=item.tickers,
+                        published_at=item.published_at,
+                    )
+                    print(news)
+                    await publisher.send(news, tz)
                     await dedup.mark_seen(fp)
                 finally:
                     queue.task_done()

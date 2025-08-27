@@ -27,14 +27,21 @@ class ProviderSettings(BaseModel):
 
 
 class NewsdataSettings(ProviderSettings):
-    endpoint: str = "crypto"
+    endpoint: str = "developer/v2"
     query: str | None = (
         "language=en,ru&timeframe=90m&removeduplicate=1&size=50&q=ETF OR SEC OR hack OR listing"
     )
 
+class CryptoPanicSettings(ProviderSettings):
+    endpoint: str = "posts/"
+    #query: str | None = (
+    #    "language=en,ru&timeframe=90m&removeduplicate=1&size=50&q=ETF OR SEC OR hack OR listing"
+    #)
+
 
 class ProvidersSettings(BaseModel):
     newsdata: NewsdataSettings
+    cryptopanic: CryptoPanicSettings
 
 
 class FiltersSettings(BaseModel):

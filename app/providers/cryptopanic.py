@@ -10,16 +10,16 @@ from dateutil import parser
 from .base import BaseProvider, logger
 
 
-class NewsdataProvider(BaseProvider):
-    """Provider adapter for the Newsdata.io crypto endpoint."""
+class CryptoPanicProvider(BaseProvider):
+    """Provider adapter for the cryptopanic crypto endpoint."""
 
-    name = "newsdata"
+    name = "cryptopanic"
 
     def _build_request(self) -> Mapping[str, Any]:
-        base_url = self.config.get("base_url", "https://newsdata.io/api/1")
-        endpoint = self.config.get("endpoint", "crypto")
+        base_url = self.config.get("base_url", "https://cryptopanic.com/api/developer/v2")
+        endpoint = self.config.get("endpoint", "posts/")
         url = f"{base_url}/{endpoint}"
-        params: dict[str, Any] = {"apikey": self.config.get("api_key")}
+        params: dict[str, Any] = {"auth_token": self.config.get("api_key")}
         query = self.config.get("query")
         if query:
             for part in query.split("&"):
@@ -27,10 +27,10 @@ class NewsdataProvider(BaseProvider):
                     k, v = part.split("=", 1)
                     params.setdefault(k, v)
         # defaults
-        params.setdefault("removeduplicate", "1")
-        params.setdefault("size", "50")
-        if endpoint != "crypto" and params.get("category") == "cryptocurrency":
-            raise ValueError("Use /api/1/crypto endpoint for cryptocurrency category")
+        #params.setdefault("removeduplicate", "1")
+        #params.setdefault("size", "50")
+        #if endpoint != "crypto" and params.get("category") == "cryptocurrency":
+        #    raise ValueError("Use /api/1/crypto endpoint for cryptocurrency category")
         return {"url": url, "params": params}
 
     async def poll(self) -> Iterable[Mapping[str, Any]]:  # type: ignore[override]

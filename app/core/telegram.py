@@ -61,5 +61,6 @@ class TelegramPublisher:
         """Send a news item to the configured Telegram chat."""
 
         text = format_message(item, tz)
+        print(text)
         async with self._semaphore:
             await self.bot.send_message(self.chat_id, text, parse_mode=self.parse_mode)

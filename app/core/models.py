@@ -12,7 +12,7 @@ class NormalizedItem(BaseModel):
     source: str
     title: str
     summary: str | None = None
-    url: AnyUrl
+    url: str
     published_at: datetime
     language: str | None = None
     authors: List[str] = []
